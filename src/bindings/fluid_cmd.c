@@ -1971,7 +1971,7 @@ fluid_handle_set(void *data, int ac, char **av, fluid_ostream_t out)
         fluid_ostream_printf(out, "set: Value out of range. Try 'info %s' for valid ranges\n", av[0]);
     }
 
-    if(handler->router && !fluid_settings_is_realtime(handler->synth->settings, av[0]))
+    if(!fluid_settings_is_realtime(handler->synth->settings, av[0]))
     {
         fluid_ostream_printf(out, "Warning: '%s' is not a realtime setting, changes won't take effect.\n", av[0]);
     }
@@ -4280,16 +4280,6 @@ fluid_cmd_handler_t *new_fluid_cmd_handler(fluid_synth_t *synth, fluid_midi_rout
         return NULL;
     }
 
-    if (!synth) {
-	    for(i = 0; i < FLUID_N_ELEMENTS(fluid_commands); i++) {
-		    if (!FLUID_STRCMP(fluid_commands[i].name, "set"))
-			    continue;
-		    fluid_cmd_handler_register(handler, &fluid_commands[i]);
-		    break;
-	    }
-	    return handler;
-    }
-
     handler->synth = synth;
     handler->router = router;
 
@@ -4308,25 +4298,6 @@ fluid_cmd_handler_t *new_fluid_cmd_handler(fluid_synth_t *synth, fluid_midi_rout
     }
 
     return handler;
-}
-
-fluid_settings_t *parse_fluid_cmd_set(fluid_settings_t *settings, char *config_file)
-{
-    fluid_synth_t synth = { .settings = settings };
-    fluid_cmd_handler_t *handler;
-
-    handler = new_fluid_cmd_handler(NULL, NULL);
-    if(handler == NULL)
-        return NULL;
-
-    handler->synth = &synth;
-
-    if(fluid_source(handler, config_file) < 0)
-    {
-        settings = NULL;
-     }
-     delete_fluid_cmd_handler(handler);
-     return settings;
 }
 
 /**
@@ -4384,8 +4355,7 @@ fluid_cmd_handler_handle(void *data, int ac, char **av, fluid_ostream_t out)
         return (*cmd->handler)(handler, ac - 1, av + 1, out);
     }
 
-    if (handler->router)
-        fluid_ostream_printf(out, "unknown command: %s (try help)\n", av[0]);
+    fluid_ostream_printf(out, "unknown command: %s (try help)\n", av[0]);
     return FLUID_FAILED;
 }
 

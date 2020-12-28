@@ -393,7 +393,6 @@ fluid_settings_get(fluid_settings_t *settings, const char *name,
 
     if(table == NULL || ntokens <= 0)
     {
-return FLUID_OK;
         return FLUID_FAILED;
     }
 
@@ -404,7 +403,6 @@ return FLUID_OK;
 
         if(!node)
         {
-return FLUID_OK;
             return FLUID_FAILED;
         }
 
