@@ -488,6 +488,16 @@ fluid_jack_client_register_ports(void *driver, int isaudio, jack_client_t *clien
         }
     }
 
+    if (1)
+    {
+        fluid_synth_t* synth;
+        if(fluid_jack_obtain_synth(settings, &synth) == FLUID_OK)
+        {
+	    synth->audio_channels = dev->num_output_ports;
+	}
+    }
+    FLUID_LOG(FLUID_DBG, "%s: out ports: %d", __FUNCTION__, 2 * dev->num_output_ports);
+
     /* Adjust sample rate to match JACK's */
     jack_srate = jack_get_sample_rate(client);
     FLUID_LOG(FLUID_DBG, "Jack engine sample rate: %lu", jack_srate);
@@ -689,7 +699,7 @@ fluid_jack_driver_process(jack_nframes_t nframes, void *arg)
     fluid_jack_audio_driver_t *audio_driver;
     fluid_jack_midi_driver_t *midi_driver;
     float *left, *right;
-    int i;
+    int i, ret;
 
     jack_midi_event_t midi_event;
     fluid_midi_event_t *evt;
@@ -752,6 +762,8 @@ fluid_jack_driver_process(jack_nframes_t nframes, void *arg)
     {
         fluid_audio_func_t callback = (audio_driver->callback != NULL) ? audio_driver->callback : (fluid_audio_func_t) fluid_synth_process;
 
+FLUID_LOG(FLUID_DBG, "%s: callback: %p", __FUNCTION__, audio_driver->callback);
+
         for(i = 0; i < audio_driver->num_output_ports; i++)
         {
             int k = i * 2;
@@ -776,12 +788,18 @@ fluid_jack_driver_process(jack_nframes_t nframes, void *arg)
             FLUID_MEMSET(audio_driver->fx_bufs[k], 0, nframes * sizeof(float));
         }
 
-        return callback(audio_driver->data,
+FLUID_LOG(FLUID_DBG, "%s: callback nframes %d, fx ports %d, out ports %d",
+	  __FUNCTION__, nframes,
+	  audio_driver->num_fx_ports * 2, audio_driver->num_output_ports * 2);
+	ret = callback(audio_driver->data,
                         nframes,
                         audio_driver->num_fx_ports * 2,
                         audio_driver->fx_bufs,
                         audio_driver->num_output_ports * 2,
                         audio_driver->output_bufs);
+        if (ret)
+            FLUID_LOG(FLUID_DBG, "%s: callback returning %d", __FUNCTION__, ret);
+	return ret;
     }
 }
 
