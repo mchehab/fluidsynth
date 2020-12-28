@@ -594,26 +594,6 @@ fluid_synth_update_mixer(fluid_synth_t *synth, fluid_rvoice_function_t method, i
                                             intparam, realparam);
 }
 
-/* Handler for synth.gain setting. */
-static void
-fluid_synth_handle_audio_channels(void *data, const char *name, double value)
-{
-    int channels;
-
-    fluid_synth_t *synth = (fluid_synth_t *)data;
-    channels = (int)value;
-
-    if(channels < 1)
-	channels = 1;
-    else if(channels > 128)
-	channels = 128;
-
-    if(channels > synth->audio_groups)
-        channels = synth->audio_groups;
-
-    synth->audio_channels = channels;
-}
-
 static FLUID_INLINE unsigned int fluid_synth_get_min_note_length_LOCAL(fluid_synth_t *synth)
 {
     int i;
@@ -695,8 +675,6 @@ new_fluid_synth(fluid_settings_t *settings)
     fluid_settings_getnum_float(settings, "synth.overflow.important", &synth->overflow.important);
 
     /* register the callbacks */
-//    fluid_settings_callback_num(settings, "synth.audio-channels",
-//				fluid_synth_handle_audio_channels, synth);
     fluid_settings_callback_num(settings, "synth.gain",
                                 fluid_synth_handle_gain, synth);
     fluid_settings_callback_int(settings, "synth.polyphony",
@@ -3948,44 +3926,12 @@ fluid_synth_process_LOCAL(fluid_synth_t *synth, int len, int nfx, float *fx[],
     fluid_return_val_if_fail(len >= 0, FLUID_FAILED);
     fluid_return_val_if_fail(len != 0, FLUID_OK); // to avoid raising FE_DIVBYZERO below
 
-    // QUICK HACK!!! Are there anything else needed for this to work???
     nfxchan = synth->effects_channels;
     nfxunits = synth->effects_groups;
     naudchan = synth->audio_channels;
 
-    fluid_settings_getint(synth->settings, "synth.audio-channels", &synth->audio_channels);
-//    fluid_settings_getint(synth->settings, "synth.effects-channels", &synth->effects_channels);
-//    fluid_settings_getint(synth->settings, "synth.effects-groups", &synth->effects_groups);
-
-    if (naudchan != synth->audio_channels)
-    {
-	FLUID_LOG(FLUID_ERR, "Number of audio channels changed from %d to %d",
-		  naudchan, synth->audio_channels);
-
-        naudchan = synth->audio_channels;
-//	return FLUID_FAILED;
-    }
-    if (nfxchan != synth->effects_channels)
-    {
-	FLUID_LOG(FLUID_ERR, "Number of effects channels changed from %d to %d",
-		  nfxchan, synth->effects_channels);
-
-	return FLUID_FAILED;
-    }
-    if (nfxunits != synth->effects_groups)
-    {
-	FLUID_LOG(FLUID_ERR, "Number of effects groups changed from %d to %d",
-		  nfxunits, synth->effects_groups);
-
-	return FLUID_FAILED;
-    }
-
-FLUID_LOG(FLUID_DBG, "1 so far, so good...");
     fluid_return_val_if_fail(0 <= nfx / 2 && nfx / 2 <= nfxchan * nfxunits, FLUID_FAILED);
-FLUID_LOG(FLUID_DBG, "2 so far, so good...");
     fluid_return_val_if_fail(0 <= nout / 2 && nout / 2 <= naudchan, FLUID_FAILED);
-
-FLUID_LOG(FLUID_DBG, "3 so far, so good...");
 
     /* get internal mixer audio dry buffer's pointer (left and right channel) */
     fluid_rvoice_mixer_get_bufs(synth->eventhandler->mixer, &left_in, &right_in);
