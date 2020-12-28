@@ -124,6 +124,8 @@ fluid_jack_midi_autoconnect(jack_client_t *client, fluid_jack_midi_driver_t *mid
     {
         for(j = 0; midi_source_ports[j] != NULL; j++)
         {
+	    if (!midi_source_ports[j])
+		    break;
             for(i = 0; i < midi_driver->midi_port_count; i++)
             {
                 FLUID_LOG(FLUID_INFO, "jack midi autoconnect \"%s\" to \"%s\"", midi_source_ports[j], jack_port_name(midi_driver->midi_port[i]));
@@ -433,6 +435,7 @@ fluid_jack_client_register_ports(void *driver, int isaudio, jack_client_t *clien
                 FLUID_LOG(FLUID_ERR, "Failed to create Jack audio port '%s'", name);
                 goto error_recovery;
             }
+FLUID_LOG(FLUID_ERR, "created Jack audio output port '%s'", name);
 
             sprintf(name, "r_%02d", i);
 
@@ -442,6 +445,7 @@ fluid_jack_client_register_ports(void *driver, int isaudio, jack_client_t *clien
                 FLUID_LOG(FLUID_ERR, "Failed to create Jack audio port '%s'", name);
                 goto error_recovery;
             }
+FLUID_LOG(FLUID_ERR, "created Jack audio output port '%s'", name);
         }
 
         fluid_settings_getint(settings, "synth.effects-channels", &dev->num_fx_ports);
@@ -476,6 +480,7 @@ fluid_jack_client_register_ports(void *driver, int isaudio, jack_client_t *clien
                 FLUID_LOG(FLUID_ERR, "Failed to create Jack fx audio port '%s'", name);
                 goto error_recovery;
             }
+FLUID_LOG(FLUID_ERR, "created Jack audio output port '%s'", name);
 
             sprintf(name, "fx_r_%02d", i);
 
@@ -485,6 +490,7 @@ fluid_jack_client_register_ports(void *driver, int isaudio, jack_client_t *clien
                 FLUID_LOG(FLUID_ERR, "Failed to create Jack fx audio port '%s'", name);
                 goto error_recovery;
             }
+FLUID_LOG(FLUID_ERR, "created Jack audio output port '%s'", name);
         }
     }
 
@@ -612,6 +618,8 @@ new_fluid_jack_audio_driver2(fluid_settings_t *settings, fluid_audio_func_t func
     /* find some physical ports and connect to them */
     fluid_settings_getint(settings, "audio.jack.autoconnect", &autoconnect);
 
+FLUID_LOG(FLUID_ERR, "autoconnect %d", autoconnect);
+
     if(autoconnect)
     {
         jack_ports = jack_get_ports(client, NULL, NULL, JackPortIsInput | JackPortIsPhysical);
@@ -621,22 +629,29 @@ new_fluid_jack_audio_driver2(fluid_settings_t *settings, fluid_audio_func_t func
             int err;
             int connected = 0;
 
+FLUID_LOG(FLUID_ERR, "number of output ports: %d", 2 * dev->num_output_ports);
+
             for(i = 0; jack_ports[i] && i < 2 * dev->num_output_ports; ++i)
             {
+		if (!jack_ports[i])
+			break;
                 err = jack_connect(client, jack_port_name(dev->output_ports[i]), jack_ports[i]);
 
                 if(err)
                 {
-                    FLUID_LOG(FLUID_ERR, "Error connecting jack port");
+                    FLUID_LOG(FLUID_ERR, "Error connecting jack port: %d", err);
                 }
                 else
                 {
+FLUID_LOG(FLUID_ERR, "Connected %s to %s", jack_port_name(dev->output_ports[i]), jack_ports[i]);
                     connected++;
                 }
             }
 
             for(i = 0; jack_ports[i] && i < 2 * dev->num_fx_ports; ++i)
             {
+		if (!jack_ports[i])
+			break;
                 err = jack_connect(client, jack_port_name(dev->fx_ports[i]), jack_ports[i]);
 
                 if(err)
@@ -645,6 +660,7 @@ new_fluid_jack_audio_driver2(fluid_settings_t *settings, fluid_audio_func_t func
                 }
                 else
                 {
+FLUID_LOG(FLUID_ERR, "Connected %s to %s", jack_port_name(dev->fx_ports[i]), jack_ports[i]);
                     connected++;
                 }
             }
