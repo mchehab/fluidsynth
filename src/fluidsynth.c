@@ -855,6 +855,23 @@ int main(int argc, char **argv)
         }
     }
 
+    /* try to load and execute the user or system configuration file */
+    cmd_handler = new_fluid_cmd_handler(synth, router);
+
+    if(cmd_handler == NULL)
+    {
+        fprintf(stderr, "Failed to create the command handler\n");
+        goto cleanup;
+    }
+
+    if(config_file != NULL)
+    {
+        if(fluid_source(cmd_handler, config_file) < 0)
+        {
+            fprintf(stderr, "Failed to execute user provided command configuration file '%s'\n", config_file);
+        }
+    }
+
     router = new_fluid_midi_router(
                  settings,
                  dump ? fluid_midi_dump_postrouter : fluid_synth_handle_midi_event,
@@ -934,15 +951,6 @@ int main(int argc, char **argv)
         }
 
         fluid_player_play(player);
-    }
-
-    /* try to load and execute the user or system configuration file */
-    cmd_handler = new_fluid_cmd_handler(synth, router);
-
-    if(cmd_handler == NULL)
-    {
-        fprintf(stderr, "Failed to create the command handler\n");
-        goto cleanup;
     }
 
     if(config_file != NULL)
