@@ -830,6 +830,25 @@ int main(int argc, char **argv)
         fluid_settings_setint(settings, "synth.lock-memory", 0);
     }
 
+    /* Handle set commands */
+    if(config_file != NULL) {
+	strncpy(buf, config_file, sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = '\0';
+    }
+    else if(fluid_get_userconf(buf, sizeof(buf)) == NULL) {
+        fluid_get_sysconf(buf, sizeof(buf));
+    }
+
+    if(buf[0] != '\0') {
+        settings = parse_fluid_cmd_set(settings, buf);
+
+        if(settings == NULL)
+        {
+            fprintf(stderr, "Failed to execute set commands from configuration file '%s'\n", buf);
+            goto cleanup;
+        }
+    }
+
     /* create the synthesizer */
     synth = new_fluid_synth(settings);
 
