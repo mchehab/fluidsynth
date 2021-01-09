@@ -4295,6 +4295,11 @@ fluid_cmd_handler_handle(void *data, int ac, char **av, fluid_ostream_t out)
         return (*cmd->handler)(handler, ac - 1, av + 1, out);
     }
 
+    if (!handler->synth)
+    {
+        return FLUID_OK;
+    }
+
     fluid_ostream_printf(out, "unknown command: %s (try help)\n", av[0]);
     return FLUID_FAILED;
 }
